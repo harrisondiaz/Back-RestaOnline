@@ -250,6 +250,51 @@ app.post('/api/dishes', (req, res) => {
   connection.end();
 });
 
+app.get('/api/users/:email', async (req, res) => {
+  const email = req.params.email;
+
+  if (!email) {
+    res.status(400).send('El correo electrónico es obligatorio');
+    return;
+  }
+
+  try {
+    const connection = mysql.createConnection(db_config);
+
+    connection.query(
+        'SELECT * FROM Users WHERE email = ?',
+        [email],
+        (error, results) => {
+          if (error) {
+            console.error('Error ejecutando la consulta:', error.stack);
+            res.status(500).send(`Error ejecutando la consulta: ${error.message}`);
+            return;
+          }
+
+          if (results.length === 0) {
+            res.status(404).send('No se encontró el usuario con este correo electrónico');
+            return;
+          }
+
+          const user = results[0];
+
+          res.status(200).json({
+            id: user.id,
+            first_name: user.first_name,
+            last_name: user.last_name,
+            email: user.email,
+            role: user.role,
+            registration_date: user.registration_date,
+          });
+        }
+    );
+
+    connection.end();
+  } catch (error) {
+    console.error('Error en la búsqueda de usuario:', error);
+    res.status(500).send('Error en la búsqueda de usuario');
+  }
+});
 
 
 app.listen(port ,() => {
