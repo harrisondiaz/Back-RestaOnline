@@ -1,7 +1,7 @@
 const mysql = require('mysql2');
 const express = require('express');
 const app = express();
-const port = 3030;
+const port = process.env.PORT || 3030;
 const bcrypt = require('bcrypt');
 const bodyParser = require('body-parser');
 const saltRounds = 10;
@@ -252,7 +252,7 @@ app.post('/api/dishes', (req, res) => {
 
 
 
-app.listen(port,"0.0.0.0" ,() => {
-  console.log(`App listening at http://0.0.0.0:${port}`);
+app.listen(port ,() => {
+  console.log(`App listening at ${port}`);
 });
 
