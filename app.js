@@ -296,6 +296,81 @@ app.get('/api/users/:email', async (req, res) => {
   }
 });
 
+app.put('/api/users/:id/name', async (req, res) => {
+  const id = req.params.id;
+  const { first_name, last_name } = req.body;
+
+  if (!id || !first_name || !last_name) {
+    res.status(400).send('El ID, el nombre y el apellido son obligatorios');
+    return;
+  }
+
+  try {
+    const connection = mysql.createConnection(db_config);
+
+    connection.query(
+        'UPDATE Users SET first_name = ?, last_name = ? WHERE id = ?',
+        [first_name, last_name, id],
+        (error, results) => {
+          if (error) {
+            console.error('Error ejecutando la consulta:', error.stack);
+            res.status(500).send(`Error ejecutando la consulta: ${error.message}`);
+            return;
+          }
+
+          if (results.affectedRows === 0) {
+            res.status(404).send('No se encontró el usuario con este ID');
+            return;
+          }
+
+          res.status(200).send('Nombre del usuario actualizado exitosamente');
+        }
+    );
+
+    connection.end();
+  } catch (error) {
+    console.error('Error al actualizar el nombre del usuario:', error);
+    res.status(500).send('Error al actualizar el nombre del usuario');
+  }
+});
+
+app.put('/api/users/:id/email', async (req, res) => {
+  const id = req.params.id;
+  const { email } = req.body;
+
+  if (!id || !email) {
+    res.status(400).send('El ID y el correo electrónico son obligatorios');
+    return;
+  }
+
+  try {
+    const connection = mysql.createConnection(db_config);
+
+    connection.query(
+        'UPDATE Users SET email = ? WHERE id = ?',
+        [email, id],
+        (error, results) => {
+          if (error) {
+            console.error('Error ejecutando la consulta:', error.stack);
+            res.status(500).send(`Error ejecutando la consulta: ${error.message}`);
+            return;
+          }
+
+          if (results.affectedRows === 0) {
+            res.status(404).send('No se encontró el usuario con este ID');
+            return;
+          }
+
+          res.status(200).send('Correo electrónico del usuario actualizado exitosamente');
+        }
+    );
+
+    connection.end();
+  } catch (error) {
+    console.error('Error al actualizar el correo electrónico del usuario:', error);
+    res.status(500).send('Error al actualizar el correo electrónico del usuario');
+  }
+});
 
 app.listen(port ,() => {
   console.log(`App listening at ${port}`);
