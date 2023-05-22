@@ -372,6 +372,30 @@ app.put('/api/users/:id/email', async (req, res) => {
   }
 });
 
+
+app.post('/api/dishes', (req, res) => {
+  const connection = mysql.createConnection(db_config);
+
+  const {name, description, image, price, category} = req.body;
+  try {
+    connection.query('INSERT INTO Dishes (name, description, image, price, category) VALUES (?, ?, ?, ?, ?)', [name, description, image, price, category], (error, results) => {
+      if (error) {
+        console.error('Error executing query:', error.stack);
+        res.status(500).send(`Error executing query: ${error.message}`);
+        return;
+      }
+
+      const dishId = results.insertId;
+      res.status(200).json({id: dishId, name, description, image, price, category});
+    });
+
+    connection.end();
+  } catch (error) {
+    console.error('Error al insertar el platillo:', error);
+    res.status(500).send('Error al insertar el platillo');
+  }
+});
+
 app.listen(port ,() => {
   console.log(`App listening at ${port}`);
 });
