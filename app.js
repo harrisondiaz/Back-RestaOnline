@@ -414,6 +414,28 @@ app.delete('/api/dishes/:id', (req, res) => {
       res.status(500).send('Error al borrar el platillo');
     }
 });
+
+
+/*Me gustaria un endpoint put para dish*/
+app.put('/api/dishes/:id', (req, res) => {
+  const connection = mysql.createConnection(db_config);
+    const id = req.params.id;
+    const {name, description, image, price, category} = req.body;
+    try {
+        connection.query('UPDATE Dishes SET name = ?, description = ?, image = ?, price = ?, category = ? WHERE id = ?', [name, description, image, price, category, id], (error, results) => {
+            if (error) {
+            console.error('Error executing query:', error.stack);
+            res.status(500).send(`Error executing query: ${error.message}`);
+            return;
+            }
+            res.status(200).json({id: id, name, description, image, price, category});
+        });
+            connection.end();
+    }catch (error){
+        console.error('Error al actualizar el platillo:', error);
+        res.status(500).send('Error al actualizar el platillo');
+    }
+});
 app.listen(port ,() => {
   console.log(`App listening at ${port}`);
 });
