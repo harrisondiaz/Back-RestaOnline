@@ -398,7 +398,7 @@ app.post('/api/dishes', (req, res) => {
 
 app.delete('/api/dishes/:id', (req, res) => {
   const connection = mysql.createConnection(db_config);
-  const {id} = req.params.id;
+  const id = req.params.id;
     try {
       connection.query('DELETE FROM Dishes WHERE id = ?', [id], (error, results) => {
         if (error) {
