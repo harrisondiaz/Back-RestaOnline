@@ -395,7 +395,7 @@ app.post('/api/dishes', (req, res) => {
     res.status(500).send('Error al insertar el platillo');
   }
 });
-/*Me gustaria el end point de borrar un dish por id*/
+
 app.delete('/api/dishes/:id', (req, res) => {
   const connection = mysql.createConnection(db_config);
   const {id} = req.params.id;
@@ -406,7 +406,7 @@ app.delete('/api/dishes/:id', (req, res) => {
           res.status(500).send(`Error executing query: ${error.message}`);
           return;
         }
-        res.status(200).json({id});
+        res.status(200).json({id: id});
       });
         connection.end();
     }catch (error) {
