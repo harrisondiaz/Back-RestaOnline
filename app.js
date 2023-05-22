@@ -436,6 +436,25 @@ app.put('/api/dishes/:id', (req, res) => {
         res.status(500).send('Error al actualizar el platillo');
     }
 });
+
+/*Me gustaria crear un endpoint donde se recuperen todos los usuarios*/
+app.get('/api/users', (req, res) => {
+  const connection = mysql.createConnection(db_config);
+    try {
+        connection.query('SELECT * FROM Users', (error, results) => {
+            if (error) {
+            console.error('Error executing query:', error.stack);
+            res.status(500).send(`Error executing query: ${error.message}`);
+            return;
+            }
+            res.status(200).json(results);
+        });
+            connection.end();
+    }catch (error) {
+        console.error('Error al recuperar los usuarios:', error);
+        res.status(500).send('Error al recuperar los usuarios');
+    }
+});
 app.listen(port ,() => {
   console.log(`App listening at ${port}`);
 });
