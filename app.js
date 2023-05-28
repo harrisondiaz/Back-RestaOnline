@@ -593,6 +593,67 @@ app.get('/api/addons/:name', (req, res) => {
     connection.end();
 });
 
+app.put('/api/orders/:id', (req, res) => {
+    const connection = mysql.createConnection(db_config);
+
+    const orderId = req.params.id;
+    const newStatus = req.body.status;
+
+    const validStatuses = ['PENDING', 'PREPARING', 'SENT', 'DELIVERED', 'CANCELED'];
+    if (!validStatuses.includes(newStatus)) {
+        res.status(400).send(`Invalid status: ${newStatus}`);
+        return;
+    }
+
+    try {
+        connection.query('UPDATE Orders SET status = ? WHERE id = ?', [newStatus, orderId], (error, results) => {
+            if (error) {
+                console.error('Error executing query:', error.stack);
+                res.status(500).send(`Error executing query: ${error.message}`);
+                return;
+            }
+
+            if (results.affectedRows > 0) {
+                res.status(200).send(`Order with id ${orderId} updated successfully`);
+            } else {
+                res.status(404).send(`Order with id ${orderId} not found`);
+            }
+        });
+
+        connection.end();
+    } catch (error) {
+        console.error('Error al actualizar la orden:', error);
+        res.status(500).send('Error al actualizar la orden');
+    }
+});
+
+app.delete('/api/orders/:id', (req, res) => {
+    const connection = mysql.createConnection(db_config);
+
+    const orderId = req.params.id;
+
+    try {
+        connection.query('DELETE FROM Orders WHERE id = ?', [orderId], (error, results) => {
+            if (error) {
+                console.error('Error executing query:', error.stack);
+                res.status(500).send(`Error executing query: ${error.message}`);
+                return;
+            }
+
+            if (results.affectedRows > 0) {
+                res.status(200).send(`Order with id ${orderId} deleted successfully`);
+            } else {
+                res.status(404).send(`Order with id ${orderId} not found`);
+            }
+        });
+
+        connection.end();
+    } catch (error) {
+        console.error('Error al eliminar la orden:', error);
+        res.status(500).send('Error al eliminar la orden');
+    }
+});
+
 app.listen(port ,() => {
   console.log(`App listening at ${port}`);
 });
