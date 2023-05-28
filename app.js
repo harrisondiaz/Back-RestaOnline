@@ -497,7 +497,7 @@ app.get('/api/orders', (req, res) => {
 });
 
 app.post('/api/orders', (req, res) => {
-    const connection = mysql.createConnection(db_config);
+   const connection = mysql.createConnection(db_config);
 
     const { userId, delivery_address, contact_phone, status, total } = req.body;
 
