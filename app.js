@@ -526,6 +526,7 @@ app.post('/api/orders', (req, res) => {
                         }
                     });
                 });
+                if(orderAddons !== null){
 
                 orderAddons.forEach(addon => {
                     const insertAddon = 'INSERT INTO OrderAddons (order_id, addon_id, addon_price) VALUES (?, ?, ?)';
@@ -537,6 +538,7 @@ app.post('/api/orders', (req, res) => {
                         }
                     });
                 });
+                }
 
                 connection.commit((error) => {
                     if (error) {
