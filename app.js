@@ -474,6 +474,109 @@ app.get('/api/addons', (req, res) => {
         res.status(500).send('Error al recuperar los addons');
     }
 });
+
+app.get('/api/orders', (req, res) => {
+    const connection = mysql.createConnection(db_config);
+
+    try {
+        connection.query('SELECT * FROM Orders', (error, results) => {
+            if (error) {
+                console.error('Error executing query:', error.stack);
+                res.status(500).send(`Error executing query: ${error.message}`);
+                return;
+            }
+
+            res.status(200).json(results);
+        });
+
+        connection.end();
+    } catch (error) {
+        console.error('Error al recuperar las ordenes:', error);
+        res.status(500).send('Error al recuperar las ordenes');
+    }
+});
+
+app.post('/api/orders', (req, res) => {
+    const connection = mysql.createConnection(db_config);
+
+    const { userId, delivery_address, contact_phone, status, total } = req.body;
+
+    try {
+        connection.beginTransaction(async (error) => {
+            if (error) throw error;
+
+            const insertOrder = 'INSERT INTO Orders (user_id, delivery_address, contact_phone, status, total) VALUES (?, ?, ?, ?, ?)';
+            connection.query(insertOrder, [userId, delivery_address, contact_phone, status, total], (error, results) => {
+                if (error) {
+                    return connection.rollback(() => {
+                        throw error;
+                    });
+                }
+
+                const orderId = results.insertId;
+                const { orderDetails, orderAddons } = req.body;
+
+                orderDetails.forEach(detail => {
+                    const insertDetail = 'INSERT INTO OrderDetails (order_id, dish_id, quantity, unit_price, total_price, modification) VALUES (?, ?, ?, ?, ?, ?)';
+                    connection.query(insertDetail, [orderId, detail.dish_id, detail.quantity, detail.unit_price, detail.total_price, detail.modification], (error, results) => {
+                        if (error) {
+                            return connection.rollback(() => {
+                                throw error;
+                            });
+                        }
+                    });
+                });
+
+                orderAddons.forEach(addon => {
+                    const insertAddon = 'INSERT INTO OrderAddons (order_id, addon_id, addon_price) VALUES (?, ?, ?)';
+                    connection.query(insertAddon, [orderId, addon.addon_id, addon.addon_price], (error, results) => {
+                        if (error) {
+                            return connection.rollback(() => {
+                                throw error;
+                            });
+                        }
+                    });
+                });
+
+                connection.commit((error) => {
+                    if (error) {
+                        return connection.rollback(() => {
+                            throw error;
+                        });
+                    }
+
+                    res.status(200).json({ id: orderId, userId, delivery_address, contact_phone, status, total });
+                });
+            });
+        });
+
+    } catch (error) {
+        console.error('Error al insertar la orden:', error);
+        res.status(500).send('Error al insertar la orden');
+    }
+});
+
+app.get('/api/addons/:name', (req, res) => {
+    const connection = mysql.createConnection(db_config);
+    const addonName = req.params.name;
+
+    connection.query('SELECT * FROM Addons WHERE name = ?', [addonName], (error, results) => {
+        if (error) {
+            console.error('Error executing query:', error.stack);
+            res.status(500).send(`Error executing query: ${error.message}`);
+            return;
+        }
+
+        if (results.length > 0) {
+            res.status(200).json(results);
+        } else {
+            res.status(404).send(`Addon with name ${addonName} not found`);
+        }
+    });
+
+    connection.end();
+});
+
 app.listen(port ,() => {
   console.log(`App listening at ${port}`);
 });
