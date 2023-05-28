@@ -479,7 +479,20 @@ app.get('/api/orders', (req, res) => {
     const connection = mysql.createConnection(db_config);
 
     try {
-        connection.query('SELECT * FROM Orders', (error, results) => {
+        const query = `
+        SELECT 
+            Orders.id as order_id,
+            Users.first_name as customer_first_name,
+            Users.last_name as customer_last_name,
+            Dishes.name as dish_name,
+            Orders.status,
+            Orders.total
+        FROM Orders
+        INNER JOIN Users ON Orders.user_id = Users.id
+        INNER JOIN OrderDetails ON Orders.id = OrderDetails.order_id
+        INNER JOIN Dishes ON OrderDetails.dish_id = Dishes.id
+        `;
+        connection.query(query, (error, results) => {
             if (error) {
                 console.error('Error executing query:', error.stack);
                 res.status(500).send(`Error executing query: ${error.message}`);
@@ -495,6 +508,7 @@ app.get('/api/orders', (req, res) => {
         res.status(500).send('Error al recuperar las ordenes');
     }
 });
+
 
 app.post('/api/orders', (req, res) => {
    const connection = mysql.createConnection(db_config);
