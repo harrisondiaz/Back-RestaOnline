@@ -632,27 +632,106 @@ app.delete('/api/orders/:id', (req, res) => {
 
     const orderId = req.params.id;
 
-    try {
-        connection.query('DELETE FROM Orders WHERE id = ?', [orderId], (error, results) => {
+    connection.beginTransaction(function(err) {
+        if (err) {
+            console.error('Error al iniciar la transacción:', error.stack);
+            res.status(500).send(`Error al iniciar la transacción: ${error.message}`);
+            return;
+        }
+
+        connection.query('DELETE FROM OrderAddons WHERE order_id = ?', [orderId], function (error, results) {
             if (error) {
-                console.error('Error executing query:', error.stack);
-                res.status(500).send(`Error executing query: ${error.message}`);
-                return;
+                return connection.rollback(function() {
+                    console.error('Error executing query:', error.stack);
+                    res.status(500).send(`Error executing query: ${error.message}`);
+                });
             }
 
-            if (results.affectedRows > 0) {
-                res.status(200).send(`Order with id ${orderId} deleted successfully`);
-            } else {
-                res.status(404).send(`Order with id ${orderId} not found`);
-            }
+            connection.query('DELETE FROM OrderDetails WHERE order_id = ?', [orderId], function (error, results) {
+                if (error) {
+                    return connection.rollback(function() {
+                        console.error('Error executing query:', error.stack);
+                        res.status(500).send(`Error executing query: ${error.message}`);
+                    });
+                }
+
+                connection.query('DELETE FROM Orders WHERE id = ?', [orderId], function (error, results) {
+                    if (error) {
+                        return connection.rollback(function() {
+                            console.error('Error executing query:', error.stack);
+                            res.status(500).send(`Error executing query: ${error.message}`);
+                        });
+                    }
+
+                    connection.commit(function(err) {
+                        if (err) {
+                            return connection.rollback(function() {
+                                console.error('Error al confirmar la transacción:', error.stack);
+                                res.status(500).send(`Error al confirmar la transacción: ${error.message}`);
+                            });
+                        }
+
+                        if (results.affectedRows > 0) {
+                            res.status(200).send(`Order with id ${orderId} deleted successfully`);
+                        } else {
+                            res.status(404).send(`Order with id ${orderId} not found`);
+                        }
+                    });
+                });
+            });
         });
-
-        connection.end();
-    } catch (error) {
-        console.error('Error al eliminar la orden:', error);
-        res.status(500).send('Error al eliminar la orden');
-    }
+    });
 });
+app.get('/api/reports/top-category', (req, res) => {
+    const connection = mysql.createConnection(db_config);
+
+    const query = `
+        SELECT Dishes.category, COUNT(OrderDetails.order_id) AS order_count 
+        FROM Dishes 
+        JOIN OrderDetails ON Dishes.id = OrderDetails.dish_id 
+        GROUP BY Dishes.category 
+        ORDER BY order_count DESC 
+        LIMIT 1
+    `;
+
+    connection.query(query, (error, results) => {
+        if (error) {
+            console.error('Error executing query:', error.stack);
+            res.status(500).send(`Error executing query: ${error.message}`);
+            return;
+        }
+
+        res.json(results[0]);
+    });
+
+    connection.end();
+});
+
+app.get('/api/reports/top-dish', (req, res) => {
+    const connection = mysql.createConnection(db_config);
+
+    const query = `
+        SELECT Dishes.id, Dishes.name, COUNT(OrderDetails.order_id) AS order_count 
+        FROM Dishes 
+        JOIN OrderDetails ON Dishes.id = OrderDetails.dish_id 
+        GROUP BY Dishes.id 
+        ORDER BY order_count DESC 
+        LIMIT 1
+    `;
+
+    connection.query(query, (error, results) => {
+        if (error) {
+            console.error('Error executing query:', error.stack);
+            res.status(500).send(`Error executing query: ${error.message}`);
+            return;
+        }
+
+        res.json(results[0]);
+    });
+
+    connection.end();
+});
+
 
 app.listen(port ,() => {
   console.log(`App listening at ${port}`);
