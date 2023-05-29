@@ -456,7 +456,7 @@ app.get('/api/users', (req, res) => {
     }
 });
 
-/*Me gustaria un endpoint get para los addons*/
+
 app.get('/api/addons', (req, res) => {
   const connection = mysql.createConnection(db_config);
     try {
@@ -592,6 +592,35 @@ app.get('/api/addons/:name', (req, res) => {
 
     connection.end();
 });
+
+
+app.post('/api/addons', (req, res) => {
+    const { name } = req.body;
+
+    if (!name) {
+        res.status(400).send("El nombre del addon es requerido");
+        return;
+    }
+
+    const connection = mysql.createConnection(db_config);
+
+    connection.query(
+        'INSERT INTO Addons (name) VALUES (?)',
+        [name],
+        (error, results) => {
+            if (error) {
+                console.error('Error executing query:', error.stack);
+                res.status(500).send(`Error executing query: ${error.message}`);
+                return;
+            }
+
+            res.status(201).send('Addon creado con éxito');
+        }
+    );
+
+    connection.end();
+});
+
 
 app.put('/api/orders/:id', (req, res) => {
     const connection = mysql.createConnection(db_config);
